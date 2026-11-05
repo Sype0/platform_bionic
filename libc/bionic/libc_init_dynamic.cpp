@@ -135,8 +135,19 @@ static void init_prog_id(libc_globals* globals) {
 
 #undef IS
 
+  // topaz (Redmi Note 12 4G): the Qualcomm/Xiaomi vendor blobs were never
+  // tested with hardened_malloc, and its stricter checks (zero-on-free,
+  // canaries, write-after-free checks) turn their latent heap bugs into
+  // crashes of the modem, audio, camera and sensor HALs. They keep using
+  // scudo, as on stock Android; everything from /system, /system_ext,
+  // /product and the APEXes still gets hardened_malloc.
+  const bool is_soc_vendor_prog = starts_with(exe_path, "/vendor/") || starts_with(exe_path, "/odm/");
+  if (is_soc_vendor_prog) {
+    flags = GLOBAL_FLAG_DISABLE_HARDENED_MALLOC;
+  }
+
   bool is_debuggable = is_debuggable_build();
-  const bool is_vendor_prog = starts_with(exe_path, "/vendor/") || starts_with(exe_path, "/apex/com.google.");
+  const bool is_vendor_prog = is_soc_vendor_prog || starts_with(exe_path, "/apex/com.google.");
   if (is_debuggable && is_vendor_prog) {
     const char* basename = __gnu_basename(exe_path);
     static const char propName[] = "persist.device_config.memory_safety_native.hardened_malloc.mode_override.process.";

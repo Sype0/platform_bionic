@@ -425,7 +425,7 @@ static constexpr MallocDispatch __scudo_malloc_dispatch __attribute__((unused)) 
 
 static const MallocDispatch* native_allocator_dispatch;
 
-#if defined(IS_DEBUGGABLE_BUILD) && defined(__aarch64__)
+#if 0  // unused on topaz, see InitNativeAllocatorDispatch
 static bool is_VA_39_bit() {
   size_t size = 1L << 40;
   void* addr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -467,10 +467,10 @@ static bool is_hardened_malloc_disabled_via_proc_attr() {
 }
 
 void InitNativeAllocatorDispatch(libc_globals* globals) {
+  // topaz: hardened_malloc is built with 2GiB class regions that fit the
+  // kernel's 39-bit address space, so debuggable builds use it too instead of
+  // falling back to scudo (that would make userdebug test a different heap).
   bool hardened_impl = true;
-#if defined(IS_DEBUGGABLE_BUILD) && defined(__aarch64__)
-  hardened_impl = !is_VA_39_bit();
-#endif
 
   int prog_id = 0;
 #if !defined(LIBC_STATIC)
